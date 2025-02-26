@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw a Perfect Circle - Troll Edition</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            border: 2px solid black;
+            cursor: crosshair;
+            background: white;
+        }
+
+        #score,
+        #timer {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #flag {
+            display: none;
+            width: 100px;
+            margin-top: 10px;
+        }
+
+        #secret-key {
+            display: none;
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Draw a Perfect Circle Challenge! ⭕</h1>
+    <p>Try to draw the most perfect circle possible in <strong>10 seconds</strong>! ⏳</p>
+    <canvas id="drawCanvas" width="400" height="400"></canvas>
+    <br>
+    <button onclick="startGame()">Start Challenge</button>
+    <p id="timer">Time Left: --</p>
+    <p id="score">Score: --</p>
+    <img id="flag" src="https://upload.wikimedia.org/wikipedia/commons/6/62/Flag_of_Japan.svg" alt="Perfect Score Flag">
+    <p id="secret-key"></p>
+
+    <script>
+        const canvas = document.getElementById("drawCanvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        let points = [];
+        let timeLeft = 10;
+        let timerInterval;
+
+        function startGame() {
+            clearCanvas();
+            timeLeft = 10;
+            document.getElementById("timer").textContent = `Time Left: ${timeLeft}s`;
+            document.getElementById("flag").style.display = "none";
+            document.getElementById("secret-key").style.display = "none";
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timer").textContent = `Time Left: ${timeLeft}s`;
+
+                if (canvas.width > 200) {
+                    canvas.width -= 5;
+                    canvas.height -= 5;
+                    ctx.scale(0.98, 0.98);
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    drawing = false;
+                    checkCircle();
+                }
+            }, 1000);
+        }
+
+        canvas.addEventListener("mousedown", (event) => {
+            if (timeLeft > 0) {
+                drawing = true;
+                points = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.beginPath();
+                const { x, y } = getMousePos(event);
+                ctx.moveTo(x, y);
+                points.push({ x, y });
+            }
+        });
+
+        canvas.addEventListener("mousemove", (event) => {
+            if (!drawing) return;
+            let { x, y } = getMousePos(event);
+            points.push({ x, y });
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (Math.random() < 0.1) {
+                ctx.clearRect(x - 5, y - 5, 10, 10);
+            }
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            drawing = false;
+        });
+
+        function checkCircle() {
+            if (points.length < 10) {
+                alert("Draw a complete shape first!");
+                return;
+            }
+
+            let minX = Math.min(...points.map(p => p.x));
+            let maxX = Math.max(...points.map(p => p.x));
+            let minY = Math.min(...points.map(p => p.y));
+            let maxY = Math.max(...points.map(p => p.y));
+
+            let width = maxX - minX;
+            let height = maxY - minY;
+            let radius = (width + height) / 4;
+            let centerX = minX + width / 2;
+            let centerY = minY + height / 2;
+
+            let deviation = 0;
+            for (let p of points) {
+                let dist = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
+                deviation += Math.abs(dist - radius);
+            }
+            let score = Math.max(0, 100 - (deviation / points.length));
+
+            document.getElementById("score").textContent = `Score: ${score.toFixed(2)}%`;
+
+            if (score.toFixed(2) === "100.00") {
+                document.getElementById("flag").style.display = "block";
+                setTimeout(() => {
+                    let secretKeyElement = document.getElementById("secret-key");
+                    secretKeyElement.style.display = "block";
+                    let keyPart1 = String.fromCharCode(80, 97, 115);
+                    let keyPart2 = String.fromCharCode(115, 105, 111);
+                    let keyPart3 = String.fromCharCode(110, 95, 70);
+                    let keyPart4 = String.fromCharCode(114, 117, 105, 116);
+                    let secretKey = keyPart1 + keyPart2 + keyPart3 + keyPart4;
+                    secretKeyElement.textContent = `Secret Key: ${secretKey}`;
+                }, 2000);
+            }
+        }
+
+        function clearCanvas() {
+            canvas.width = 400;
+            canvas.height = 400;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById("score").textContent = "Score: --";
+            document.getElementById("timer").textContent = "Time Left: --";
+            document.getElementById("flag").style.display = "none";
+            document.getElementById("secret-key").style.display = "none";
+            clearInterval(timerInterval);
+        }
+
+        function getMousePos(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+    </script>
+</body>
+
+</html>
